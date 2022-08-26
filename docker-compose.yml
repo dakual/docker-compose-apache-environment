@@ -1,0 +1,54 @@
+version: '3'
+services:
+  apache-php:
+    build: .
+    image: php-apache
+    container_name: apache-php
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./htdocs:/var/www/html
+      - ./conf/apache:/etc/apache2/sites-enabled
+      - ./conf/php/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - http-network
+
+  myadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    ports:
+      - "81:80"
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=${MYSQL_HOST}
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=100000000
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    networks:
+      - http-network
+
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: ${MYSQL_HOST}
+    env_file:
+      - ".env"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./data/db/mysql:/var/lib/mysql"
+    networks:
+      - http-network
+
+networks:
+  http-network:
+    driver: bridge
+
